@@ -27,9 +27,6 @@ namespace FlashCommon
     public class Deck
     {
         [FirestoreProperty]
-        public List<PromptResponsePair> groups { get; set; }
-
-        [FirestoreProperty]
         public int numPairs { get; set; }
 
         [FirestoreProperty]
@@ -40,6 +37,15 @@ namespace FlashCommon
 
         [FirestoreProperty]
         public long id { get; set; }
+
+        public List<PromptResponsePair> groups { get; set; }
+
+        public void AddPair(PromptResponsePair pair)
+        {
+            groups.Insert(0, pair);
+            numPairs = groups.Count;
+            for (var i = 1; i <= groups.Count; i++) groups[i-1].order = i * 1024;
+        }
     }
 
     [FirestoreData]
@@ -87,6 +93,29 @@ namespace FlashCommon
         [FirestoreProperty]
         public Source source { get; set; }
 
+
+        public PromptResponsePair CreatePromptResponsePair(Deck deck)
+        {
+            var pair = new PromptResponsePair()
+            {
+                deckId = deck.id,
+                id = JSTime.Now,
+                interval = 0,
+                isActive = false,
+                order = 1024,
+                topicId = id,
+                uid = uid,
+            };
+            pair.nextDate = pair.id;
+
+            pair.prompts = new List<Prompt>(2);
+            pair.prompts.Add(new Prompt() { topicNameId = source.id });
+            pair.prompts.Add(new Prompt() { topicNameId = target.id });
+
+            deck.AddPair(pair);
+
+            return pair;
+        }
     }
 
     [FirestoreData]
@@ -101,6 +130,11 @@ namespace FlashCommon
         [FirestoreProperty]
         public string topicNameId { get; set; }
 
+        public static Prompt CreatePrompt()
+        {
+            var prompt = new Prompt();
+            return prompt;
+        }
     }
 
     [FirestoreData]
