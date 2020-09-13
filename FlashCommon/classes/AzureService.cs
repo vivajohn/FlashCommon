@@ -20,7 +20,7 @@ namespace FlashCommon
 
         public AzureService() 
         {
-            var client = new CosmosClientBuilder(@"https://vivajohn2.documents.azure.com:443/", @"M9xOG2vaPNm9jOBmhTz7F0fKi3FXVh0xYeJ32lxnIVbhvWp67Lz5PX9H64cgUrbfwFp9MbSssFzTAgk7geBtiA==")
+            var client = new CosmosClientBuilder(Cosmos.Endpoint, Cosmos.AuthKey)
                                 .WithSerializerOptions(new CosmosSerializationOptions
                                 {
                                     PropertyNamingPolicy = CosmosPropertyNamingPolicy.CamelCase
