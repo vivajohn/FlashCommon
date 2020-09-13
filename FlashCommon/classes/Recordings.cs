@@ -1,4 +1,6 @@
 ﻿using Google.Cloud.Firestore;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,12 +15,15 @@ namespace FlashCommon
     {
         // Note: not all properties included here
 
+        [JsonProperty]
         [FirestoreProperty]
         public string accountType { get; set; }
 
+        [JsonProperty]
         [FirestoreProperty]
         public string displayName { get; set; }
 
+        [JsonProperty]
         [FirestoreProperty]
         public long currentTopicId { get; set; }
     }
@@ -26,15 +31,19 @@ namespace FlashCommon
     [FirestoreData]
     public class Deck
     {
+        [JsonProperty]
         [FirestoreProperty]
         public int numPairs { get; set; }
 
+        [JsonProperty]
         [FirestoreProperty]
         public int order { get; set; }
 
+        [JsonProperty]
         [FirestoreProperty]
         public string name { get; set; }
 
+        [JsonConverter(typeof(ToStringConverter))]
         [FirestoreProperty]
         public long id { get; set; }
 
@@ -61,9 +70,11 @@ namespace FlashCommon
     [FirestoreData]
     public class Source
     {
+        [JsonProperty]
         [FirestoreProperty]
         public string id { get; set; }
 
+        [JsonProperty]
         [FirestoreProperty]
         public string name { get; set; }
 
@@ -72,24 +83,31 @@ namespace FlashCommon
     [FirestoreData]
     public class Topic
     {
+        [JsonProperty]
         [FirestoreProperty]
         public bool isLanguage { get; set; }
 
+        [JsonProperty]
         [FirestoreProperty]
         public List<Deck> decks { get; set; }
 
+        [JsonProperty]
         [FirestoreProperty]
         public string uid { get; set; }
 
+        [JsonConverter(typeof(ToStringConverter))]
         [FirestoreProperty]
         public long id { get; set; }
 
+        [JsonProperty]
         [FirestoreProperty]
         public bool listMode { get; set; }
 
+        [JsonProperty]
         [FirestoreProperty]
         public Target target { get; set; }
 
+        [JsonProperty]
         [FirestoreProperty]
         public Source source { get; set; }
 
@@ -121,12 +139,15 @@ namespace FlashCommon
     [FirestoreData]
     public class Prompt
     {
+        [JsonProperty]
         [FirestoreProperty]
         public string text { get; set; }
 
+        [JsonConverter(typeof(ToStringConverter))]
         [FirestoreProperty]
         public long id { get; set; }
 
+        [JsonProperty]
         [FirestoreProperty]
         public string topicNameId { get; set; }
 
@@ -140,33 +161,70 @@ namespace FlashCommon
     [FirestoreData]
     public class PromptResponsePair
     {
+        [JsonProperty]
         [FirestoreProperty]
         public bool isActive { get; set; }
 
+        [JsonProperty]
         [FirestoreProperty]
         public int interval { get; set; }
 
+        [JsonProperty]
         [FirestoreProperty]
         public List<Prompt> prompts { get; set; }
 
+        [JsonProperty]
         [FirestoreProperty]
         public int order { get; set; }
 
+        [JsonConverter(typeof(ToStringConverter))]
         [FirestoreProperty]
         public long id { get; set; }
 
+        [JsonProperty]
         [FirestoreProperty]
         public long nextDate { get; set; }
 
+        [JsonProperty]
         [FirestoreProperty]
         public string uid { get; set; }
 
+        [JsonProperty]
         [FirestoreProperty]
         public long topicId { get; set; }
 
+        [JsonProperty]
         [FirestoreProperty]
         public long deckId { get; set; }
     }
 
 
+    // In Azure Cosmos DB, the id field is mandatory and it must be a string.
+    // This converts the existing long id to a string.
+    public class ToStringConverter : JsonConverter
+    {
+        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        {
+            JToken t = JToken.FromObject(value.ToString());
+            t.WriteTo(writer);
+
+        }
+
+        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        {
+            throw new NotImplementedException("Unnecessary because CanRead is false. The type will skip the converter.");
+        }
+
+        public override bool CanRead
+        {
+            get { 
+                return false; 
+            }
+        }
+
+        public override bool CanConvert(Type objectType)
+        {
+            return true;
+        }
+    }
 }

@@ -11,16 +11,19 @@ using Google.Api;
 using System.Reactive.Subjects;
 using System.Runtime.CompilerServices;
 using Google.Cloud.Firestore.Converters;
+using System.Reactive;
 
 namespace FlashCommon
 {
     // Access the Cloud Firestore database
-    public class FirebaseService : IFirebase
+    public class FirebaseService : IDatabase
     {
         private static readonly string projectId = "flashdev-69399";
 
         private FirestoreDb db = FirestoreDb.Create(projectId);
         private ReplaySubject<User> rs = null;
+
+        public string Name { get { return "Firebase"; } }
 
         // Get the user's list of language pairs  (i.e. en-de). Usually there is only one.
         public IObservable<User> GetUserInfo(string uid)
@@ -37,15 +40,17 @@ namespace FlashCommon
             return rs;
         }
 
-        // Get the user's list of language pairs  (i.e. en-de). Usually there is only one.
-        public IObservable<Topic[]> GetTopics(string uid)
+        // Get the user's list of card decks (categories of prompt-response pairs).
+        // (Usually there is only one Topic object.)
+        public IObservable<IList<Topic>> GetTopics(string uid)
         {
             var o = db.Collection("topics").WhereEqualTo("uid", uid).GetSnapshotAsync().ToObservable();
             return o.Select(snapshot => {
                 var docs = snapshot.Documents.ToArray();
-                var topics = Array.ConvertAll<DocumentSnapshot, Topic>(
-                    docs, x => x.ConvertTo<Topic>());
-                return topics;
+                var topics = docs.Select(x => x.ConvertTo<Topic>());
+                //var topics = Array.ConvertAll<DocumentSnapshot, Topic>(
+                //    docs, x => x.ConvertTo<Topic>());
+                return new List<Topic>(topics);
             });
         }
 
@@ -62,7 +67,7 @@ namespace FlashCommon
         }
 
         // Gets the currently active pairs for the playback page
-        public IObservable<List<PromptResponsePair>> GetCurrentPairs(string uid, long currentTopicId)
+        public IObservable<IList<PromptResponsePair>> GetCurrentPairs(string uid, long currentTopicId)
         {
             var o = db.Collection("prpairs")
             .WhereEqualTo("uid", uid)
@@ -96,26 +101,28 @@ namespace FlashCommon
             });
         }
 
-        // Save the topics structure
-        public IObservable<WriteResult> SaveTopics(Topic topic)
+        // Save the topic structure
+        public IObservable<Unit> SaveTopic(Topic topic)
         {
             var key = $"{topic.uid}_{topic.id}";
             var dic = ToDictionary(topic);
-            var o = db.Collection("topics").Document(key).SetAsync(dic).ToObservable();
-            return o;
+            //var o = db.Collection("topics").Document(key).SetAsync(dic).ToObservable();
+            //return o.Select(x => Unit.Default);
+            return UnitTask(db.Collection("topics").Document(key).SetAsync(dic));
         }
 
         // Save a prompt-response pair
-        public IObservable<WriteResult> SavePromptPair(PromptResponsePair pair)
+        public IObservable<Unit> SavePromptPair(PromptResponsePair pair)
         {
             var key = $"{pair.uid}_{pair.id}";
             var dic = ToDictionary(pair);
-            var o = db.Collection("prpairs").Document(key).SetAsync(dic).ToObservable();
-            return o;
+            //var o = db.Collection("prpairs").Document(key).SetAsync(dic).ToObservable();
+            //return o.Select(x => Unit.Default);
+            return UnitTask(db.Collection("prpairs").Document(key).SetAsync(dic));
         }
 
         // Save a list of prompt-response pairs
-        public IObservable<IList<WriteResult>> SavePromptPairs(List<PromptResponsePair> pairs)
+        public IObservable<Unit> SavePromptPairs(List<PromptResponsePair> pairs)
         {
             var batch = db.StartBatch();
             foreach(var pair in pairs)
@@ -124,7 +131,19 @@ namespace FlashCommon
                 var dic = ToDictionary(pair);
                 batch.Set(db.Collection("prpairs").Document(key), dic);
             }
-            return batch.CommitAsync().ToObservable();
+            //return batch.CommitAsync().ToObservable().Select(x => Unit.Default);
+            return UnitTask(batch.CommitAsync());
+        }
+
+        // Delete a prompt-response pair
+        public IObservable<Unit> DeletePair(PromptResponsePair pair)
+        {
+            throw new NotImplementedException();
+        }
+
+        private IObservable<Unit> UnitTask(Task t)
+        {
+            return t.ToObservable().Select(x => Unit.Default);
         }
 
 
