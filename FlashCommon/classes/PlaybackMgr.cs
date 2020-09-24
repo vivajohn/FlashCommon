@@ -33,13 +33,13 @@ namespace FlashCommon
         {
             if (pairs.Count == 0) return;
 
-            // TO DO: replace this with a C# version
-            //var pair = pairs[currentIndex];
-            //var nextInfo = await JSRuntime.InvokeAsync<long[]>("flash.nextDate", pair.interval, success);
-            //pair.interval = (int)nextInfo[0];
-            //pair.nextDate = nextInfo[1];
+            // Calculate the next playback time
+            var pair = pairs[currentIndex];
+            var nextInfo = (new Intervals()).next(pair.interval, success);
+            pair.interval = nextInfo.index;
+            pair.nextDate = nextInfo.date;
 
-                currentIndex = (currentIndex + 1) % pairs.Count;
+            currentIndex = (currentIndex + 1) % pairs.Count;
             getRecordings();
         }
 

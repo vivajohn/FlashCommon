@@ -16,7 +16,7 @@ using System.Reactive;
 namespace FlashCommon
 {
     // Access the Cloud Firestore database
-    public class FirebaseService : IDatabase
+    public class FirebaseService : IFirebase
     {
         private static readonly string projectId = "flashdev-69399";
 

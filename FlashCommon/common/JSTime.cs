@@ -12,9 +12,9 @@ namespace FlashCommon
         { 
             get 
             {
-                var now = DateTime.Now.Ticks;
-                var js = new DateTime(1970, 1, 1);
-                return (now - js.Ticks) / 10000;
+                var jsZeroDate = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+                var js = DateTime.UtcNow.Subtract(jsZeroDate);
+                return Convert.ToInt64(js.TotalMilliseconds);
             }
         }
     }

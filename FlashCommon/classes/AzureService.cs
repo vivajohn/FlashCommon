@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace FlashCommon
 {
-    public class AzureService : AzureUtil, IDatabase
+    public class AzureService : AzureUtil, IAzure
     {
         public string Name { get { return "Azure"; } }
 
