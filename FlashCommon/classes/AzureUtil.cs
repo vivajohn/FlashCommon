@@ -1,4 +1,5 @@
-﻿using Microsoft.Azure.Cosmos;
+﻿using CustomExtensions;
+using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Fluent;
 using System;
 using System.Collections.Generic;
@@ -39,16 +40,8 @@ namespace FlashCommon
         // Save an object to the database
         protected IObservable<Unit> Save<T>(string name, T item)
         {
-            return UnitTask(Container(name).UpsertItemAsync(item));
+            return Container(name).UpsertItemAsync(item).AsUnit();
         }
-
-        // Convert a result to Unit.Default (we aren't reading in these cases so
-        // we only need to return an empty observable).
-        protected IObservable<Unit> UnitTask(Task t)
-        {
-            return t.ToObservable().Select(x => Unit.Default);
-        }
-
 
         // Run a query that returns only one result
         protected IObservable<T> QuerySingle<T>(string containerName, string query)

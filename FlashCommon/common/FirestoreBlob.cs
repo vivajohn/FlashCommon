@@ -1,4 +1,5 @@
-﻿using Google.Protobuf;
+﻿using Google.Cloud.Firestore;
+using Google.Protobuf;
 
 namespace FlashCommon
 {
@@ -6,12 +7,23 @@ namespace FlashCommon
     // This represents the data in a platform-free way.
     public class FirestoreBlob
     {
-        public FirestoreBlob(string blobType, ByteString data) {
+        public FirestoreBlob(string blobType, string data64) {
             this.blobType = blobType;
-            this.data = data;
+            this.data64 = data64;
         }
 
         public string blobType;
-        public ByteString data;
+        public string data64;
     }
+
+    [FirestoreData]
+    public class BlobDto
+    {
+        [FirestoreProperty]
+        public string type { get; set; }
+
+        [FirestoreProperty]
+        public Blob blob { get; set; }
+    }
+
 }

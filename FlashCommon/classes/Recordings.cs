@@ -17,11 +17,19 @@ namespace FlashCommon
 
         [JsonProperty]
         [FirestoreProperty]
+        public string uid { get; set; }
+
+        [JsonProperty]
+        [FirestoreProperty]
         public string accountType { get; set; }
 
         [JsonProperty]
         [FirestoreProperty]
         public string displayName { get; set; }
+
+        [JsonProperty]
+        [FirestoreProperty]
+        public string email { get; set; }
 
         [JsonProperty]
         [FirestoreProperty]
@@ -55,6 +63,13 @@ namespace FlashCommon
             numPairs = groups.Count;
             for (var i = 1; i <= groups.Count; i++) groups[i-1].order = i * 1024;
         }
+
+        // method for cloning object 
+        public Deck ShallowCopy()
+        {
+            return MemberwiseClone() as Deck;
+        }
+
     }
 
     [FirestoreData]
@@ -112,6 +127,21 @@ namespace FlashCommon
         public Source source { get; set; }
 
 
+        public Deck AddDeck()
+        {
+            var deck = new Deck()
+            {
+                groups = new List<PromptResponsePair>(),
+                id = JSTime.Now,
+                name = String.Empty,
+                numPairs = 0,
+                order = decks.Count + 1
+            };
+            CreatePromptResponsePair(deck);
+            decks.Add(deck);
+            return deck;
+        }
+
         public PromptResponsePair CreatePromptResponsePair(Deck deck)
         {
             var pair = new PromptResponsePair()
@@ -133,6 +163,21 @@ namespace FlashCommon
             deck.AddPair(pair);
 
             return pair;
+        }
+
+        // Copies the Topic but sets the deck.groups to null
+        // (Workaround for problem saving Topic in Azure.)
+        public object NoGroupsCopy()
+        {
+            Topic copy = MemberwiseClone() as Topic;
+            copy.decks = new List<Deck>();
+            foreach(var deck in decks)
+            {
+                var d = deck.ShallowCopy();
+                d.groups = null;
+                copy.decks.Add(d);
+            }
+            return copy;
         }
     }
 

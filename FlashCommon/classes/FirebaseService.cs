@@ -1,43 +1,63 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using Google.Cloud.Firestore;
-using System.Diagnostics;
 using Google.Protobuf;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
-using Google.Api;
 using System.Reactive.Subjects;
-using System.Runtime.CompilerServices;
-using Google.Cloud.Firestore.Converters;
 using System.Reactive;
+using CustomExtensions;
+using System.Diagnostics;
+using Google.Apis.Auth.OAuth2;
+using System.Text.Json;
+using Google.Cloud.Firestore.V1;
 
 namespace FlashCommon
 {
     // Access the Cloud Firestore database
     public class FirebaseService : IFirebase
     {
-        private static readonly string projectId = "flashdev-69399";
+        private FirestoreDb db;
+        private Dictionary<string, User> users = new Dictionary<string, User>();
+        private ReplaySubject<string> _currentUser = new ReplaySubject<string>(1);
 
-        private FirestoreDb db = FirestoreDb.Create(projectId);
-        private ReplaySubject<User> rs = null;
+        public DBNames Name { get { return DBNames.Firebase; } }
+        public IObservable<string> CurrentUserId { get { return _currentUser; } }
 
-        public string Name { get { return "Firebase"; } }
+        public FirebaseService(string projectId)
+        {
+            db = FirestoreDb.Create(projectId);
+        }
+
+        // Set the main user of the app
+        public void SetCurrentUserId(string uid)
+        {
+            _currentUser.OnNext(uid);
+        }
+
+        // A new user has logged in: create an entry in the Users collection
+        public IObservable<Unit> AddNewUser(User user)
+        {
+            return db.Collection("users").Document(user.uid).SetAsync(user).AsUnit();
+        }
 
         // Get the user's list of language pairs  (i.e. en-de). Usually there is only one.
         public IObservable<User> GetUserInfo(string uid)
         {
-            if (rs == null) 
+            if (users.ContainsKey(uid))
             {
-                rs = new ReplaySubject<User>(1);
-                var o = db.Collection("users").Document(uid).GetSnapshotAsync().ToObservable();
-                o.Subscribe(snapshot => { 
-                    var user = snapshot.ConvertTo<User>();
-                    rs.OnNext(user);
-                });
+                return Observable.Return(users[uid]);
             }
-            return rs;
+            var o = db.Collection("users").Document(uid).GetSnapshotAsync().ToObservable();
+            return o.Select(snapshot => { 
+                var user = snapshot.ConvertTo<User>();
+                if (user != null)
+                {
+                    users[uid] = user;
+                }
+                return user;
+            });
         }
 
         // Get the user's list of card decks (categories of prompt-response pairs).
@@ -48,8 +68,6 @@ namespace FlashCommon
             return o.Select(snapshot => {
                 var docs = snapshot.Documents.ToArray();
                 var topics = docs.Select(x => x.ConvertTo<Topic>());
-                //var topics = Array.ConvertAll<DocumentSnapshot, Topic>(
-                //    docs, x => x.ConvertTo<Topic>());
                 return new List<Topic>(topics);
             });
         }
@@ -97,18 +115,27 @@ namespace FlashCommon
                 // The returned data is a Firestore blob which has its own particular format
                 var blobType = snapshot.GetValue<string>("type");
                 var data = snapshot.GetValue<ByteString>("blob");
-                return new FirestoreBlob(blobType, data);
+                return new FirestoreBlob(blobType, data.ToBase64());
             });
         }
+
+        public IObservable<Unit> SaveRecording(string uid, Prompt prompt, FirestoreBlob blob)
+        {
+            // Firestore has its own blob type, which we must use
+            var bytes = ByteString.FromBase64(blob.data64);
+            var b = Blob.FromByteString(bytes);
+            var data = new BlobDto() { type = blob.blobType, blob = b };
+            var key = $"{uid}_{prompt.id}";
+            return db.Collection("blobs").Document(key).SetAsync(data).AsUnit();
+        }
+
 
         // Save the topic structure
         public IObservable<Unit> SaveTopic(Topic topic)
         {
             var key = $"{topic.uid}_{topic.id}";
             var dic = ToDictionary(topic);
-            //var o = db.Collection("topics").Document(key).SetAsync(dic).ToObservable();
-            //return o.Select(x => Unit.Default);
-            return UnitTask(db.Collection("topics").Document(key).SetAsync(dic));
+            return db.Collection("topics").Document(key).SetAsync(dic).AsUnit();
         }
 
         // Save a prompt-response pair
@@ -116,9 +143,7 @@ namespace FlashCommon
         {
             var key = $"{pair.uid}_{pair.id}";
             var dic = ToDictionary(pair);
-            //var o = db.Collection("prpairs").Document(key).SetAsync(dic).ToObservable();
-            //return o.Select(x => Unit.Default);
-            return UnitTask(db.Collection("prpairs").Document(key).SetAsync(dic));
+            return db.Collection("prpairs").Document(key).SetAsync(dic).AsUnit();
         }
 
         // Save a list of prompt-response pairs
@@ -131,21 +156,20 @@ namespace FlashCommon
                 var dic = ToDictionary(pair);
                 batch.Set(db.Collection("prpairs").Document(key), dic);
             }
-            //return batch.CommitAsync().ToObservable().Select(x => Unit.Default);
-            return UnitTask(batch.CommitAsync());
+            return batch.CommitAsync().AsUnit();
         }
 
         // Delete a prompt-response pair
         public IObservable<Unit> DeletePair(PromptResponsePair pair)
         {
-            throw new NotImplementedException();
+            return db.Collection("prpairs").Document($"{pair.uid}_{pair.id}").DeleteAsync().AsUnit();
         }
 
-        private IObservable<Unit> UnitTask(Task t)
+        // Delete a recording
+        public IObservable<Unit> DeleteBlob(string uid, Prompt prompt)
         {
-            return t.ToObservable().Select(x => Unit.Default);
+            return db.Collection("blobs").Document($"{uid}_{prompt.id}").DeleteAsync().AsUnit();
         }
-
 
         // Could not find method in Firestore sdk to serialize objects, so using this
         // Ref: https://github.com/googleapis/google-cloud-dotnet/issues/2444

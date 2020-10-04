@@ -1,4 +1,5 @@
-﻿using Microsoft.Azure.Cosmos;
+﻿using CustomExtensions;
+using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Fluent;
 using System;
 using System.Collections.Generic;
@@ -6,6 +7,7 @@ using System.Diagnostics;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -22,23 +24,30 @@ namespace FlashCommon
             });
         }
 
+        public IObservable<Unit> InitBlobs()
+        {
+            var name = "blobs";
+            return DeleteContainer(name).SelectMany(result =>
+            {
+                Debug.WriteLine("Deleted Users");
+                return CreateContainer(name, "type").AsUnit();
+            });
+        }
+
         private IObservable<Unit> CreateUsers()
         {
             var name = "users";
             return DeleteContainer(name).SelectMany(result =>
             {
                 Debug.WriteLine("Deleted Users");
-                var props = new ContainerProperties(name, "/accountType");
-                return Catch(db.CreateContainerAsync(props)).SelectMany(x => {
+                return CreateContainer(name, "accountType").SelectMany(x => {
                     var user = new {
                         accountType = "pro",
                         currentTopicId = 1570041849700,
                         displayName = "Guest",
                         id = "WTatLnFyjJceDeS4QGMLo3PjFjm1"
                     };
-                    return Container(name).UpsertItemAsync(user).ToObservable().Select(x => {
-                        return Unit.Default;
-                    });
+                    return Container(name).UpsertItemAsync(user).ToObservable().AsUnit();
                 });
             });
         }
@@ -49,8 +58,7 @@ namespace FlashCommon
             return DeleteContainer(name).SelectMany(result =>
             {
                 Debug.WriteLine("Deleted Topics");
-                var props = new ContainerProperties(name, "/target/id");
-                return Catch(db.CreateContainerAsync(props)).SelectMany(x => {
+                return CreateContainer(name, "target/id").SelectMany(x => {
                     var topic = new Topic()
                     {
                         decks = new List<Deck>() {
@@ -69,28 +77,28 @@ namespace FlashCommon
                         target = new Target() { id = "de", name = "de" },
                         uid = "WTatLnFyjJceDeS4QGMLo3PjFjm1",
                     };
-                    return Container(name).UpsertItemAsync(topic).ToObservable().Select(_ => {
-                        return Unit.Default;
-                    });
+                    return Container(name).UpsertItemAsync(topic).ToObservable().AsUnit();
                 });
             });
+        }
 
+        private IObservable<ContainerResponse> CreateContainer(string name, string key)
+        {
+            var props = new ContainerProperties(name, "/" + key);
+            return Catch(db.CreateContainerAsync(props));
         }
 
         private IObservable<Unit> DeleteContainer(string name)
         {
-            return Catch(Container(name).DeleteContainerAsync()).Select(x => {
-                return Unit.Default;
-            });
+            return Catch(Container(name).DeleteContainerAsync()).AsUnit();
         }
 
         protected IObservable<T> Catch<T>(Task<T> t) where T : class
         {
-            var x = t.ToObservable().Catch((Exception e) => {
+            return t.ToObservable().Catch((Exception e) => {
                 Debug.WriteLine(e.Message);
                 return Observable.Return<T>(null);
             });
-            return x;
         }
 
     }

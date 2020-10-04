@@ -9,7 +9,17 @@ namespace FlashCommon
     {
         IObservable<IDatabase> CurrentDB { get; }
 
-        void SetCurrentDB(IDatabase db);
+        // This returns a non-repeating instance of IDatabase
+        // (Returns CurrentDB.FirstAsync())
+        IObservable<IDatabase> SingleDB { get; }
+
+        void SetCurrentDB(Func<IDatabase> fn);
+
+        void Connect();
+
+        void Disconnect();
+
+        bool IsConnected { get; set; }
     }
 
 }

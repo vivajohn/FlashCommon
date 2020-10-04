@@ -1,17 +1,19 @@
-﻿using Google.Protobuf;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reactive;
-using System.Threading.Tasks;
 
 namespace FlashCommon
 {
     public interface IDatabase
     {
-        string Name { get; }
+        DBNames Name { get; }
+
+        IObservable<string> CurrentUserId { get; }
+        void SetCurrentUserId(string user);
 
         IObservable<User> GetUserInfo(string uid);
+
+        IObservable<Unit> AddNewUser(User user);
 
         IObservable<IList<Topic>> GetTopics(string uid);
 
@@ -21,6 +23,8 @@ namespace FlashCommon
 
         IObservable<FirestoreBlob> GetRecording(string uid, Prompt prompt);
 
+        IObservable<Unit> SaveRecording(string uid, Prompt prompt, FirestoreBlob blob);
+
         IObservable<Unit> SaveTopic(Topic topic);
 
         IObservable<Unit> SavePromptPair(PromptResponsePair pair);
@@ -28,5 +32,7 @@ namespace FlashCommon
         IObservable<Unit> SavePromptPairs(List<PromptResponsePair> pairs);
 
         IObservable<Unit> DeletePair(PromptResponsePair pair);
+
+        IObservable<Unit> DeleteBlob(string uid, Prompt prompt);
     }
 }
