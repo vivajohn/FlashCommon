@@ -1,9 +1,17 @@
-﻿namespace FlashCommon
+﻿using System.ComponentModel;
+
+namespace FlashCommon
 {
     public enum DBNames
     {
+        [Description("Azure Cosmos")]
         Azure,
-        Firebase
+
+        [Description("Google Cloud Firestore")]
+        Firebase,
+
+        [Description("Python REST API")]
+        Python
     }
 }
 

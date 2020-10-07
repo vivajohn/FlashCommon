@@ -7,13 +7,15 @@ namespace FlashCommon
     // This represents the data in a platform-free way.
     public class FirestoreBlob
     {
+        public FirestoreBlob() { }
+
         public FirestoreBlob(string blobType, string data64) {
             this.blobType = blobType;
             this.data64 = data64;
         }
 
-        public string blobType;
-        public string data64;
+        public string blobType { get; set; }
+        public string data64 { get; set; }
     }
 
     [FirestoreData]

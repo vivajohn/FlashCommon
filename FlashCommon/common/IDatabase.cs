@@ -29,7 +29,8 @@ namespace FlashCommon
 
         IObservable<Unit> SavePromptPair(PromptResponsePair pair);
 
-        IObservable<Unit> SavePromptPairs(List<PromptResponsePair> pairs);
+        // Currently unused
+        //IObservable<Unit> SavePromptPairs(List<PromptResponsePair> pairs);
 
         IObservable<Unit> DeletePair(PromptResponsePair pair);
 

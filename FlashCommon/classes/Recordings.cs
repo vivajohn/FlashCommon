@@ -55,7 +55,7 @@ namespace FlashCommon
         [FirestoreProperty]
         public long id { get; set; }
 
-        public List<PromptResponsePair> groups { get; set; }
+        public IList<PromptResponsePair> groups { get; set; }
 
         public void AddPair(PromptResponsePair pair)
         {
@@ -151,7 +151,7 @@ namespace FlashCommon
                 interval = 0,
                 isActive = false,
                 order = 1024,
-                topicId = id,
+                topicId = this.id,
                 uid = uid,
             };
             pair.nextDate = pair.id;
@@ -179,6 +179,27 @@ namespace FlashCommon
             }
             return copy;
         }
+
+        // Makes a topic for new users
+        public static Topic DefaultTopic(string uid)
+        {
+            var topic = new Topic()
+            {
+                decks = new List<Deck>(),
+                id = JSTime.Now,
+                isLanguage = true,
+                listMode = false,
+                source = new Source() { id = "en", name = "en" },
+                target = new Target() { id = "de", name = "de" },
+                uid = uid,
+            };
+            var deck = topic.AddDeck();
+            deck.name = "General";
+            deck.groups[0].prompts[0].text = "Example";
+            deck.groups[0].prompts[1].text = "Beispiel";
+            return topic;
+        }
+
     }
 
     [FirestoreData]
@@ -241,6 +262,10 @@ namespace FlashCommon
         [JsonProperty]
         [FirestoreProperty]
         public long deckId { get; set; }
+
+        [JsonProperty]
+        [FirestoreProperty]
+        public int version { get; set; } = 0;
     }
 
 

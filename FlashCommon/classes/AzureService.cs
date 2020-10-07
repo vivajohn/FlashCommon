@@ -112,17 +112,18 @@ namespace FlashCommon
             return Save("prpairs", pair);
         }
 
+        // No longer used
         // Save a list of prompt-response pairs
-        public IObservable<Unit> SavePromptPairs(List<PromptResponsePair> pairs)
-        {
-            var c = Container("prpairs");
-            List<Task> concurrentTasks = new List<Task>();
-            foreach (var itemToInsert in pairs)
-            {
-                concurrentTasks.Add(c.UpsertItemAsync(itemToInsert));
-            }
-            return Task.WhenAll(concurrentTasks).AsUnit();
-        }
+        //public IObservable<Unit> SavePromptPairs(List<PromptResponsePair> pairs)
+        //{
+        //    var c = Container("prpairs");
+        //    List<Task> concurrentTasks = new List<Task>();
+        //    foreach (var itemToInsert in pairs)
+        //    {
+        //        concurrentTasks.Add(c.UpsertItemAsync(itemToInsert));
+        //    }
+        //    return Task.WhenAll(concurrentTasks).AsUnit();
+        //}
 
         // Delete a prompt-response pair
         public IObservable<Unit> DeletePair(PromptResponsePair pair)

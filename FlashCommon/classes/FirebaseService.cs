@@ -146,18 +146,19 @@ namespace FlashCommon
             return db.Collection("prpairs").Document(key).SetAsync(dic).AsUnit();
         }
 
+        // No longer used
         // Save a list of prompt-response pairs
-        public IObservable<Unit> SavePromptPairs(List<PromptResponsePair> pairs)
-        {
-            var batch = db.StartBatch();
-            foreach(var pair in pairs)
-            {
-                var key = $"{pair.uid}_{pair.id}";
-                var dic = ToDictionary(pair);
-                batch.Set(db.Collection("prpairs").Document(key), dic);
-            }
-            return batch.CommitAsync().AsUnit();
-        }
+        //public IObservable<Unit> SavePromptPairs(List<PromptResponsePair> pairs)
+        //{
+        //    var batch = db.StartBatch();
+        //    foreach(var pair in pairs)
+        //    {
+        //        var key = $"{pair.uid}_{pair.id}";
+        //        var dic = ToDictionary(pair);
+        //        batch.Set(db.Collection("prpairs").Document(key), dic);
+        //    }
+        //    return batch.CommitAsync().AsUnit();
+        //}
 
         // Delete a prompt-response pair
         public IObservable<Unit> DeletePair(PromptResponsePair pair)
