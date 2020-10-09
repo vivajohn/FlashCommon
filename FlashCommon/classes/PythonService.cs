@@ -67,7 +67,8 @@ namespace FlashCommon
 
         public IObservable<FirestoreBlob> GetRecording(string uid, Prompt prompt)
         {
-            return GetHttp<FirestoreBlob>($"{baseUrl}/blob/{uid}/{prompt.id}");
+            return GetHttp<BlobDto>($"{baseUrl}/blob/{uid}/{prompt.id}")
+                .Select(rec => new FirestoreBlob(rec.type, rec.blob));
         }
 
         public IObservable<IList<Topic>> GetTopics(string uid)
@@ -102,7 +103,8 @@ namespace FlashCommon
         private class FakeBlob { public string type { get; set; } public string blob { get; set; } }
         public IObservable<Unit> SaveRecording(string uid, Prompt prompt, FirestoreBlob blob)
         {
-            var content = new StringContent(JsonSerializer.Serialize(blob));
+            var dto = new { type = blob.blobType, blob = blob.data64 };
+            var content = new StringContent(JsonSerializer.Serialize(dto));
             return client.PostAsync($"{baseUrl}/saveblob/{uid}/{prompt.id}", content).AsUnit();
         }
 

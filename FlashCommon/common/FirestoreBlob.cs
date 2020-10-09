@@ -25,7 +25,7 @@ namespace FlashCommon
         public string type { get; set; }
 
         [FirestoreProperty]
-        public Blob blob { get; set; }
+        public string blob { get; set; }
     }
 
 }

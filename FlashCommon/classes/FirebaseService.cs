@@ -114,19 +114,16 @@ namespace FlashCommon
             {
                 // The returned data is a Firestore blob which has its own particular format
                 var blobType = snapshot.GetValue<string>("type");
-                var data = snapshot.GetValue<ByteString>("blob");
-                return new FirestoreBlob(blobType, data.ToBase64());
+                var data = snapshot.GetValue<string>("blob");
+                return new FirestoreBlob(blobType, data);
             });
         }
 
         public IObservable<Unit> SaveRecording(string uid, Prompt prompt, FirestoreBlob blob)
         {
-            // Firestore has its own blob type, which we must use
-            var bytes = ByteString.FromBase64(blob.data64);
-            var b = Blob.FromByteString(bytes);
-            var data = new BlobDto() { type = blob.blobType, blob = b };
+            var dto = new BlobDto() { type = blob.blobType, blob = blob.data64 };
             var key = $"{uid}_{prompt.id}";
-            return db.Collection("blobs").Document(key).SetAsync(data).AsUnit();
+            return db.Collection("blobs").Document(key).SetAsync(dto).AsUnit();
         }
 
 
